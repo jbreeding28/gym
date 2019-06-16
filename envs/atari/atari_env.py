@@ -2,6 +2,8 @@ import numpy as np
 import os
 import gym
 import time
+import cv2
+cv2.ocl.setUseOpenCL(False)
 import traceback
 from gym import error, spaces
 from gym import utils
@@ -24,11 +26,10 @@ def to_ram(ale):
 
 class AtariEnv(gym.Env, utils.EzPickle):
     metadata = {'render.modes': ['human', 'rgb_array']}
-
     def __init__(
             self,
             game='pong',
-            obs_type='ram',
+            obs_type='image',
             frameskip=(2, 5),
             repeat_action_probability=0.,
             full_action_space=False):
@@ -42,7 +43,6 @@ class AtariEnv(gym.Env, utils.EzPickle):
                 frameskip,
                 repeat_action_probability)
         assert obs_type in ('ram', 'image')
-
         self.game_path = atari_py.get_game_path(game)
         if not os.path.exists(self.game_path):
             msg = 'You asked for game %s but path %s does not exist'
@@ -65,6 +65,8 @@ class AtariEnv(gym.Env, utils.EzPickle):
         self._action_set = (self.ale.getLegalActionSet() if full_action_space
                             else self.ale.getMinimalActionSet())
         self.action_space = spaces.Discrete(len(self._action_set))
+        # variable to change whether the environment uses RGB images or grayscale
+        self.image_type = 'rgb'
 
         (screen_width, screen_height) = self.ale.getScreenDims()
         if self._obs_type == 'ram':
@@ -102,7 +104,32 @@ class AtariEnv(gym.Env, utils.EzPickle):
         return self.ale.lives()
 
     def _get_image(self):
-        return self.ale.getScreenRGB2()
+        # modification to allow for RGB or grayscale
+        if self.image_type == 'grayscale':
+            return self.ale.getScreenGrayscale()
+        elif self.image_type == 'rgb':
+            return self.ale.getScreenRGB2()
+        else:
+            raise error.Error('Unrecognized image type: {}'.format(self.image_type))
+    
+    # need a separate rendering function so the user can still see the game properly
+
+    # since this function is only used for rendering, the model never sees it
+    # so I can upscale the image to make it easier for people to see
+    def _get_image_render(self):
+        # get the regular screen
+        img = self.ale.getScreenRGB2()
+        # get height and width of the screen
+        height = np.shape(img)[0]
+        width = np.shape(img)[1]
+        # how much bigger I want the screen to be
+        size = 4
+        # resize the screen and return it as the image
+        frame = cv2.resize(
+            img, (width*size, height*size), interpolation=cv2.INTER_AREA
+        )
+        return frame
+        
 
     def _get_ram(self):
         return to_ram(self.ale)
@@ -124,7 +151,7 @@ class AtariEnv(gym.Env, utils.EzPickle):
         return self._get_obs()
 
     def render(self, mode='human'):
-        img = self._get_image()
+        img = self._get_image_render()
         if mode == 'rgb_array':
             return img
         elif mode == 'human':

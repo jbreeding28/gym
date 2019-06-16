@@ -1,6 +1,7 @@
 import re
 import importlib
 import warnings
+import time
 
 from gym import error, logger
 
