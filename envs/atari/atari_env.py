@@ -85,9 +85,10 @@ class AtariEnv(gym.Env, utils.EzPickle):
         # Empirically, we need to seed before loading the ROM.
         self.ale.setInt(b'random_seed', seed2)
         self.ale.loadROM(self.game_path)
+        self.ale.setMode(2)
         return [seed1, seed2]
 
-    def step(self, a, play=False):
+    def step(self, a):
         reward = 0.0
         action = self._action_set[a]
         if isinstance(self.frameskip, int):
@@ -95,7 +96,7 @@ class AtariEnv(gym.Env, utils.EzPickle):
         else:
             num_steps = self.np_random.randint(self.frameskip[0], self.frameskip[1])
         for _ in range(num_steps):
-            reward += self.ale.act(action)
+            reward += self.ale.act(action, action + 18)
         ob = self._get_obs()
         return ob, reward, self.ale.game_over(), {"ale.lives": self.ale.lives()}
         
