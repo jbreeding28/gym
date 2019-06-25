@@ -232,7 +232,9 @@ class Wrapper(Env):
     def close(self):
         return self.env.close()
 
-    def seed(self, seed=None):
+    def seed(self, mode=None, seed=None):
+        if '-v4' in str(self):
+            return self.env.seed(mode, seed)
         return self.env.seed(seed)
 
     def compute_reward(self, achieved_goal, desired_goal, info):

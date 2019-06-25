@@ -27,7 +27,7 @@ def to_ram(ale):
 class AtariEnv(gym.Env, utils.EzPickle):
     metadata = {'render.modes': ['human', 'rgb_array']}
     def __init__(
-            self,
+            self, mode,
             game='pong',
             obs_type='image',
             frameskip=(2, 5),
@@ -35,7 +35,6 @@ class AtariEnv(gym.Env, utils.EzPickle):
             full_action_space=False):
         """Frameskip should be either a tuple (indicating a random range to
         choose from, with the top value exclude), or an int."""
-
         utils.EzPickle.__init__(
                 self,
                 game,
@@ -59,9 +58,7 @@ class AtariEnv(gym.Env, utils.EzPickle):
         self.ale.setFloat(
                 'repeat_action_probability'.encode('utf-8'),
                 repeat_action_probability)
-
-        self.seed()
-
+        self.seed(mode)
         self._action_set = (self.ale.getLegalActionSet() if full_action_space
                             else self.ale.getMinimalActionSet())
         self.action_space = spaces.Discrete(len(self._action_set))
@@ -76,7 +73,7 @@ class AtariEnv(gym.Env, utils.EzPickle):
         else:
             raise error.Error('Unrecognized observation type: {}'.format(self._obs_type))
 
-    def seed(self, seed=None):
+    def seed(self, mode=0, seed=None):
         self.np_random, seed1 = seeding.np_random(seed)
         # Derive a random seed. This gets passed as a uint, but gets
         # checked as an int elsewhere, so we need to keep it below
@@ -85,7 +82,10 @@ class AtariEnv(gym.Env, utils.EzPickle):
         # Empirically, we need to seed before loading the ROM.
         self.ale.setInt(b'random_seed', seed2)
         self.ale.loadROM(self.game_path)
-        self.ale.setMode(2)
+        # set the mode, removing 1 from the number
+        # 1 is removed so the user can use the number from the manual
+        # mode 1 in the manual is mode 0 in the code
+        self.ale.setMode(mode-1)
         return [seed1, seed2]
 
     def step(self, a):

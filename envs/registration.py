@@ -61,7 +61,7 @@ class EnvSpec(object):
         self._entry_point = entry_point
         self._kwargs = {} if kwargs is None else kwargs
 
-    def make(self, **kwargs):
+    def make(self, mode, **kwargs):
         """Instantiates an instance of the environment with appropriate kwargs"""
         if self._entry_point is None:
             raise error.Error('Attempting to make deprecated env {}. (HINT: is there a newer registered version of this env?)'.format(self.id))
@@ -71,7 +71,10 @@ class EnvSpec(object):
             env = self._entry_point(**_kwargs)
         else:
             cls = load(self._entry_point)
-            env = cls(**_kwargs)
+            if 'gym.envs.atari' in str(cls):
+                env = cls(mode, **_kwargs)
+            else:
+                env = cls(**_kwargs)
 
         # Make the enviroment aware of which spec it came from.
         env.unwrapped.spec = self
@@ -93,13 +96,13 @@ class EnvRegistry(object):
     def __init__(self):
         self.env_specs = {}
 
-    def make(self, path, **kwargs):
+    def make(self, path, mode=None, **kwargs):
         if len(kwargs) > 0:
             logger.info('Making new env: %s (%s)', path, kwargs)
         else:
             logger.info('Making new env: %s', path)
         spec = self.spec(path)
-        env = spec.make(**kwargs)
+        env = spec.make(mode, **kwargs)
         # We used to have people override _reset/_step rather than
         # reset/step. Set _gym_disable_underscore_compat = True on
         # your environment if you use these methods and don't want
@@ -153,7 +156,10 @@ registry = EnvRegistry()
 def register(id, **kwargs):
     return registry.register(id, **kwargs)
 
-def make(id, **kwargs):
+def make(id, mode=None, **kwargs):
+    # the -v4 will indicate it's an Atari game, so pass in the mode in that case
+    if '-v4' in id:
+        return registry.make(id, mode, **kwargs)
     return registry.make(id, **kwargs)
 
 def spec(id):
