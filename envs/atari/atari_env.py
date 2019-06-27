@@ -88,15 +88,16 @@ class AtariEnv(gym.Env, utils.EzPickle):
         self.ale.setMode(mode-1)
         return [seed1, seed2]
 
-    def step(self, a):
+    def step(self, a, b=0):
         reward = 0.0
-        action = self._action_set[a]
+        action_a = self._action_set[a]
+        action_b = self._action_set[b] + 18
         if isinstance(self.frameskip, int):
             num_steps = self.frameskip
         else:
             num_steps = self.np_random.randint(self.frameskip[0], self.frameskip[1])
         for _ in range(num_steps):
-            reward += self.ale.act(action, action + 18)
+            reward += self.ale.act(action_a, action_b)
         ob = self._get_obs()
         return ob, reward, self.ale.game_over(), {"ale.lives": self.ale.lives()}
         

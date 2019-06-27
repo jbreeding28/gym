@@ -220,8 +220,8 @@ class Wrapper(Env):
     def class_name(cls):
         return cls.__name__
 
-    def step(self, action):
-        return self.env.step(action)
+    def step(self, action_a, action_b=0):
+        return self.env.step(action_a, action_b)
 
     def reset(self, **kwargs):
         return self.env.reset(**kwargs)
@@ -256,8 +256,8 @@ class ObservationWrapper(Wrapper):
         observation = self.env.reset(**kwargs)
         return self.observation(observation)
 
-    def step(self, action):
-        observation, reward, done, info = self.env.step(action)
+    def step(self, action_a, action_b=0):
+        observation, reward, done, info = self.env.step(action_a, action_b)
         return self.observation(observation), reward, done, info
 
     def observation(self, observation):
@@ -268,8 +268,8 @@ class RewardWrapper(Wrapper):
     def reset(self, **kwargs):
         return self.env.reset(**kwargs)
 
-    def step(self, action):
-        observation, reward, done, info = self.env.step(action)
+    def step(self, action_a, action_b=0):
+        observation, reward, done, info = self.env.step(action_a, action_b)
         return observation, self.reward(reward), done, info
 
     def reward(self, reward):
