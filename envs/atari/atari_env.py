@@ -89,17 +89,21 @@ class AtariEnv(gym.Env, utils.EzPickle):
         return [seed1, seed2]
 
     def step(self, a, b=0):
-        reward = 0.0
+        reward_1 = 0.0
+        reward_2 = 0.0
         action_a = self._action_set[a]
+        # increase action for Player 2 by 18 to get it into the right range
         action_b = self._action_set[b] + 18
         if isinstance(self.frameskip, int):
             num_steps = self.frameskip
         else:
             num_steps = self.np_random.randint(self.frameskip[0], self.frameskip[1])
         for _ in range(num_steps):
-            reward += self.ale.act(action_a, action_b)
+            new_reward_1, new_reward_2 = self.ale.act(action_a, action_b)
+            reward_1 += new_reward_1
+            reward_2 += new_reward_2
         ob = self._get_obs()
-        return ob, reward, self.ale.game_over(), {"ale.lives": self.ale.lives()}
+        return ob, reward_1, reward_2, self.ale.game_over(), {"ale.lives": self.ale.lives()}
         
 
     def getLives(self):

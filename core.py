@@ -257,8 +257,8 @@ class ObservationWrapper(Wrapper):
         return self.observation(observation)
 
     def step(self, action_a, action_b=0):
-        observation, reward, done, info = self.env.step(action_a, action_b)
-        return self.observation(observation), reward, done, info
+        observation, reward_1, reward_2, done, info = self.env.step(action_a, action_b)
+        return self.observation(observation), reward_1, reward_2, done, info
 
     def observation(self, observation):
         raise NotImplementedError
@@ -269,8 +269,8 @@ class RewardWrapper(Wrapper):
         return self.env.reset(**kwargs)
 
     def step(self, action_a, action_b=0):
-        observation, reward, done, info = self.env.step(action_a, action_b)
-        return observation, self.reward(reward), done, info
+        observation, reward_1, reward_2, done, info = self.env.step(action_a, action_b)
+        return observation, self.reward(reward_1), self.reward(reward_2), done, info
 
     def reward(self, reward):
         raise NotImplementedError
