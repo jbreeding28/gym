@@ -2,6 +2,7 @@ import gym
 import pygame
 import matplotlib
 import argparse
+import random
 from gym import logger
 try:
     matplotlib.use('TkAgg')
@@ -107,14 +108,14 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
             obs = env.reset()
         else:
             action = keys_to_action.get(tuple(sorted(pressed_keys)), 0)
+            action = random.randint(0,100)
             prev_obs = obs
-            obs, rew, env_done, info = env.step(action)
+            obs, rew, _, env_done, info = env.step(action, action)
             if callback is not None:
                 callback(prev_obs, obs, action, rew, env_done, info)
         if obs is not None:
             rendered=env.render( mode='rgb_array')
             display_arr(screen, rendered, transpose=transpose, video_size=video_size)
-
         # process pygame events
         for event in pygame.event.get():
             # test events, set key states

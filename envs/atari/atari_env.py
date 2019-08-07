@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import gym
-import time
 import cv2
 cv2.ocl.setUseOpenCL(False)
 import traceback
@@ -42,6 +41,7 @@ class AtariEnv(gym.Env, utils.EzPickle):
                 frameskip,
                 repeat_action_probability)
         assert obs_type in ('ram', 'image')
+        self.game = game
         self.game_path = atari_py.get_game_path(game)
         if not os.path.exists(self.game_path):
             msg = 'You asked for game %s but path %s does not exist'
@@ -73,7 +73,7 @@ class AtariEnv(gym.Env, utils.EzPickle):
         else:
             raise error.Error('Unrecognized observation type: {}'.format(self._obs_type))
 
-    def seed(self, mode=0, seed=None):
+    def seed(self, mode=1, seed=None):
         self.np_random, seed1 = seeding.np_random(seed)
         # Derive a random seed. This gets passed as a uint, but gets
         # checked as an int elsewhere, so we need to keep it below
@@ -156,8 +156,21 @@ class AtariEnv(gym.Env, utils.EzPickle):
         self.ale.reset_game()
         return self._get_obs()
 
-    def render(self, mode='human'):
-        img = self._get_image_render()
+    def render(self, mode='human',frame=None):
+        if frame is not None:
+            if self.game == "space_invaders":
+                img=np.round(0.25*frame._frames[0])+np.round(0.5*frame._frames[1])+np.round(frame._frames[2])
+            else:
+                img=np.round(0.125*frame._frames[0])+np.round(0.25*frame._frames[1])+np.round(0.5*frame._frames[2])+np.round(frame._frames[3])
+            img = img.astype(np.dtype('u1'))
+            img=np.concatenate((img, img, img),axis=2)
+            height = np.shape(img)[0]
+            width = np.shape(img)[1]
+            size = 4
+            # resize the screen and return it as the image
+            img = cv2.resize(img, (width*size, height*size), interpolation=cv2.INTER_AREA)
+        else:
+            img = self._get_image_render()
         if mode == 'rgb_array':
             return img
         elif mode == 'human':
@@ -182,6 +195,18 @@ class AtariEnv(gym.Env, utils.EzPickle):
             'LEFT':    ord('a'),
             'RIGHT':   ord('d'),
             'FIRE':    ord(' '),
+            'UPRIGHT':      ord('e'),
+            'UPLEFT':    ord('q'),
+            'DOWNRIGHT':    ord('c'),
+            'DOWNLEFT':   ord('z'),
+            'UPFIRE':      ord('i'),
+            'DOWNFIRE':    ord('k'),
+            'LEFTFIRE':    ord('j'),
+            'RIGHTFIRE':   ord('l'),
+            'UPRIGHTFIRE':      ord('o'),
+            'UPLEFTFIRE':    ord('u'),
+            'DOWNRIGHTFIRE':    ord('.'),
+            'DOWNLEFTFIRE':   ord('m'),
         }
 
         keys_to_action = {}
